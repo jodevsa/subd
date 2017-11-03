@@ -6,12 +6,12 @@ import process from 'process';
 import fuzzy from 'fuzzy';
 import inquirer from 'inquirer';
 import inquirerAutocompletePrompt from 'inquirer-autocomplete-prompt';
+import Loader from './loader';
 import {passiveDownloader,
-        downloadReleaseSubtitle,
-        getTitleSubtitles,
-        getMovieSubtitleDetails}
+        interactiveDownloader}
          from '../../subscene_scraper/dist/main.bundle.js';
 
+inquirer.registerPrompt('autocomplete', inquirerAutocompletePrompt);
 function sleep(seconds) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -27,8 +27,8 @@ function getRandomInt(min, max) {
 }
 
 function searchFuzzy(arr) {
-  return async (answers, input) => {
-    input = input || '';
+  return async (answers, _input) => {
+    const input = _input || '';
     await sleep(getRandomInt(30, 500));
     const fuzzyResult = fuzzy.filter(input, arr.map(function(value) {
       return value.name;
@@ -59,7 +59,7 @@ function getURL(name, result) {
   }
 }
 
-inquirer.registerPrompt('autocomplete', inquirerAutocompletePrompt);
+
 async function main() {
   const program = require('commander');
   program.version('0.1.0')
@@ -69,84 +69,72 @@ async function main() {
   .option('-p, --path <cmd>', 'directory')
   .option('-c, --councurrency <i>', 'used with passive mode')
   .parse(process.argv);
-
+let loader=new Loader();
   if (program.path) {
+    loader.start('Detecting movies...')
     const files = await fromDir(program.path, ['.mp4', '.avi']);
-    console.log('detected', files.join('\n\t '));
+    loader.stop('Detected:\n\t'+files.join('\n\t'));
     const councurrency = parseInt(program.councurrency) || 1;
+    loader.start('Downloading subtitles')
     for (let i = 0; i < files.length; i += councurrency) {
       const pack = [];
       for (const file of files.slice(i, i + councurrency)) {
         const name = path.parse(file).name;
         const dir = path.resolve(path.dirname(file));
-        console.log(name, program.language, 5);
         const download = passiveDownloader(name, program.language, dir);
         pack.push(download);
       }
-      const result = await Promise.all(pack);
-
-      for (const subtitle of result) {
-        console.log('downloaded', subtitle);
-      }
+      await Promise.all(pack);
     }
+    loader.stop('Downloaded!');
   }
-
   if (program.movie) {
     const movieName = program.movie;
     const language = program.language || 'english';
-    const subtitle = await getMovieSubtitleDetails(movieName, language, false);
-    console.log('type:', subtitle.type, ', language:', language);
-    if (subtitle.type === 'title') {
-      const arr = resultToInquirerCheckBox(subtitle.result);
-      const {exactTitle: titleUrl} = await inquirer.prompt([
+    const downloader=interactiveDownloader(movieName, language, '.');
+    loader.start('Retreiving ...');
+    downloader.on('info', async (info, choose)=>{
+      loader.stop();
+      const list =
+      info.type ==='title'?resultToInquirerCheckBox(info.result):info.result;
+      const {result: result} = await inquirer.prompt([
         {
           type: 'list',
           paginated: true,
-          name: 'exactTitle',
+          name: 'result',
           message: 'Choose movie Title',
-          choices: arr,
+          choices: list,
         },
       ]);
-
-      let titleSubtitles =
-      await getTitleSubtitles({url: titleUrl, lang: language});
-      const {release} = await inquirer.prompt([
-        {
-          type: 'autocomplete',
-          name: 'release',
-          message: 'Choose subtitle',
-          source: searchFuzzy(titleSubtitles),
-          pageSize: 4,
-          validate: function(val) {
-            return val
-              ? true
-              : 'Type something!';
-          },
+      if (info.type ==='title') {
+        loader.start('Retreiving ...');
+        choose(result);
+      } else {
+        loader.start('Downloading subtitle');
+        choose(getURL(result, info.result));
+      }
+  }).on('title', async (list, choose)=>{
+    loader.stop();
+    const {release} = await inquirer.prompt([
+      {
+        type: 'autocomplete',
+        name: 'release',
+        message: 'Choose subtitle',
+        source: searchFuzzy(list),
+        pageSize: 4,
+        validate: function(val) {
+          return val
+            ? true
+            : 'Type something!';
         },
-      ]);
-
-      const releaseURL = getURL(release, titleSubtitles);
-      let result = await downloadReleaseSubtitle(releaseURL);
-      console.log('downloaded', result);
-    } else {
-      const {release} = await inquirer.prompt([
-        {
-          type: 'autocomplete',
-          name: 'release',
-          message: 'Choose subtitle',
-          source: searchFuzzy(subtitle.result),
-          pageSize: 4,
-          validate: function(val) {
-            return val
-              ? true
-              : 'Type something!';
-          },
-        },
-      ]);
-      const releaseURL = getURL(release, subtitle.result);
-      let result = await downloadReleaseSubtitle(releaseURL);
-      console.log('downloaded', result);
-    }
+      },
+    ]);
+    loader.start('Downloading subtitle');
+    choose(getURL(release, list));
+  }).on('done', (result, movieName)=>{
+    const msg=' at:\n\t'+result.join('\n\t');
+    loader.stop('Downloaded subtitle for '+movieName+msg);
+  });
   }
 }
 main();

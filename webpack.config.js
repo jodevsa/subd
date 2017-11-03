@@ -2,10 +2,10 @@ var nodeExternals = require('webpack-node-externals');
 const path = require('path')
 const config = {
     entry: [
-        "babel-polyfill", "./src/main.js"
+        'babel-polyfill', './src/main.js'
     ],
     externals: [nodeExternals()],
-    target: "node",
+    target: 'node',
     output: {
         path: path.join(__dirname, 'dist'),
         filename: 'main.bundle.js',
@@ -19,15 +19,15 @@ const config = {
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: ["env"]
+                        presets: ['env']
                     }
                 }
             }
         ]
     }
 };
-if (process.env.WEBPACK_ENV === "dev") {
-  config.devtool="eval";
+if (process.env.WEBPACK_ENV === 'dev') {
+  config.devtool='eval';
 }
 
 module.exports=config;

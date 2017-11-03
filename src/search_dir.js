@@ -13,7 +13,7 @@ async function findFilesByExt(startPath, extFilter) {
   if (!doesExist) {
     return Promise.reject(new Error('path' + startPath + ' does not exists'));
   }
-  const result = [];
+  let result = [];
   const files = await readdirP(startPath);
   for (const file of files) {
     const filename = path.join(startPath, file);
