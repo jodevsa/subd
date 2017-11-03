@@ -7,11 +7,15 @@ import fuzzy from 'fuzzy';
 import inquirer from 'inquirer';
 import inquirerAutocompletePrompt from 'inquirer-autocomplete-prompt';
 import Loader from './loader';
-import {passiveDownloader,
-        interactiveDownloader}
-         from '../../subscene_scraper/dist/main.bundle.js';
+import chalk from 'chalk';
+import {passiveDownloader, interactiveDownloader} from 'subscene_scraper';
 
 inquirer.registerPrompt('autocomplete', inquirerAutocompletePrompt);
+
+function successMessage(str) {
+  return chalk.green('*')+' '+str;
+}
+
 function sleep(seconds) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -66,16 +70,15 @@ async function main() {
   .option('-m, --movie <string>', 'search movie')
   .option('-l, --language <cmd>', 'language')
   .option('-d, --directory <cmd>', 'directory')
-  .option('-p, --path <cmd>', 'directory')
+  .option('-p, --path <cmd>', 'download subtitle for all movies in path')
   .option('-c, --councurrency <i>', 'used with passive mode')
   .parse(process.argv);
-let loader=new Loader();
+  let loader=new Loader();
   if (program.path) {
-    loader.start('Detecting movies...')
     const files = await fromDir(program.path, ['.mp4', '.avi']);
     loader.stop('Detected:\n\t'+files.join('\n\t'));
     const councurrency = parseInt(program.councurrency) || 1;
-    loader.start('Downloading subtitles')
+    loader.start(chalk.bold('Downloading subtitles'));
     for (let i = 0; i < files.length; i += councurrency) {
       const pack = [];
       for (const file of files.slice(i, i + councurrency)) {
@@ -86,13 +89,13 @@ let loader=new Loader();
       }
       await Promise.all(pack);
     }
-    loader.stop('Downloaded!');
+    loader.stop(successMessage(chalk.bold('Downloaded!')));
   }
   if (program.movie) {
     const movieName = program.movie;
     const language = program.language || 'english';
     const downloader=interactiveDownloader(movieName, language, '.');
-    loader.start('Retreiving ...');
+    loader.start(chalk.bold('Retreiving')+' ...');
     downloader.on('info', async (info, choose)=>{
       loader.stop();
       const list =
@@ -107,10 +110,10 @@ let loader=new Loader();
         },
       ]);
       if (info.type ==='title') {
-        loader.start('Retreiving ...');
+        loader.start(chalk.bold('Retreiving')+' ...');
         choose(result);
       } else {
-        loader.start('Downloading subtitle');
+        loader.start(chalk.bold('Downloading subtitles'));
         choose(getURL(result, info.result));
       }
   }).on('title', async (list, choose)=>{
@@ -133,8 +136,10 @@ let loader=new Loader();
     choose(getURL(release, list));
   }).on('done', (result, movieName)=>{
     const msg=' at:\n\t'+result.join('\n\t');
-    loader.stop('Downloaded subtitle for '+movieName+msg);
+    loader.stop(
+      successMessage(chalk.bold('Downloaded subtitle for '+movieName+msg)));
   });
   }
 }
+
 main();

@@ -1,15 +1,17 @@
 'use strict';
 
+require('util.promisify').shim();
 import {promisify} from 'util';
-import {exists, readdir, lstat} from 'fs';
+import {stat, readdir, lstat} from 'fs';
 import path from 'path';
 
-const existsP = promisify(exists);
+
 const readdirP = promisify(readdir);
 const lstatP = promisify(lstat);
+const statP=promisify(stat);
 
 async function findFilesByExt(startPath, extFilter) {
-  const doesExist = await existsP(startPath);
+  const doesExist = await statP(startPath);
   if (!doesExist) {
     return Promise.reject(new Error('path' + startPath + ' does not exists'));
   }
