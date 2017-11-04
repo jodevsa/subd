@@ -104,7 +104,7 @@ var main = function () {
           case 0:
             program = __webpack_require__(4);
 
-            program.version('0.1.0').option('-s, --search <cmd>', 'Search movie').option('-l, --language <cmd>', 'Subtitle Language').option('-d, --directory <cmd>', 'Directory to save subtitle at').option('-p, --path <cmd>', 'Download subtitle for all movies in path').option('-c, --concurrency <i>', 'Used to assign number of concurrent download with -p').option('-v, --verbose <integer>', 'A value that can be increased').parse(_process2.default.argv);
+            program.version('0.0.7').option('-s, --search <s>', 'Search movie').option('-l, --language <value>', 'Subtitle Language | DEFAULT=english').option('-d, --directory <value>', 'Directory to save subtitle at | DEFAULT=./').option('-p, --path <s>', 'Download subtitle for all movies in path').option('-c, --concurrency <n>', 'Used to assign number of concurrent download with -p DEFAULT=2').option('-v, --verbose <integer>', 'A value that can be increased').parse(_process2.default.argv);
             loader = new _loader2.default();
 
             if (!program.path) {

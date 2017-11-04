@@ -1,6 +1,6 @@
 {
   "name": "subd",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "",
   "main": "./dist/main.bundle.js",
   "scripts": {
@@ -9,10 +9,14 @@
     "dev": "WEBPACK_ENV=dev webpack --progress --colors --watch",
     "subd": "./dist/main.bundle.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jodevsa/subd.git"
+  },
   "bin": {
     "subd": "./dist/main.bundle.js"
   },
-  "author": "",
+  "author": "jodevsa",
   "license": "ISC",
   "devDependencies": {
     "babel-core": "^6.26.0",

@@ -75,13 +75,14 @@ return [...total, ...arr];
 }
 async function main() {
   const program = require('commander');
-  program.version('0.1.0')
-  .option('-s, --search <cmd>', 'Search movie')
-  .option('-l, --language <cmd>', 'Subtitle Language')
-  .option('-d, --directory <cmd>', 'Directory to save subtitle at')
-  .option('-p, --path <cmd>', 'Download subtitle for all movies in path')
-  .option('-c, --concurrency <i>',
-  'Used to assign number of concurrent download with -p')
+  program.version('0.0.7')
+  .option('-s, --search <s>', 'Search movie')
+  .option('-l, --language <value>', 'Subtitle Language | DEFAULT=english')
+  .option('-d, --directory <value>',
+  'Directory to save subtitle at | DEFAULT=./')
+  .option('-p, --path <s>', 'Download subtitle for all movies in path')
+  .option('-c, --concurrency <n>',
+  'Used to assign number of concurrent download with -p DEFAULT=2')
   .option('-v, --verbose <integer>', 'A value that can be increased')
   .parse(process.argv);
   let loader=new Loader();
