@@ -15,7 +15,11 @@ inquirer.registerPrompt('autocomplete', inquirerAutocompletePrompt);
 function successMessage(str) {
   return chalk.green('*')+' '+str;
 }
-
+function print(str, showVer, ver) {
+  if (ver>=parseInt(showVer)) {
+    console.log(chalk.blue('*')+'\t'+str);
+  }
+}
 function sleep(seconds) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -64,21 +68,34 @@ function getURL(name, result) {
 }
 
 
+function makeArrayFlat(array) {
+return array.reduce((total, arr)=>{
+return [...total, ...arr];
+}, []);
+}
 async function main() {
   const program = require('commander');
   program.version('0.1.0')
-  .option('-m, --movie <string>', 'search movie')
-  .option('-l, --language <cmd>', 'language')
-  .option('-d, --directory <cmd>', 'directory')
-  .option('-p, --path <cmd>', 'download subtitle for all movies in path')
-  .option('-c, --councurrency <i>', 'used with passive mode')
+  .option('-s, --search <cmd>', 'Search movie')
+  .option('-l, --language <cmd>', 'Subtitle Language')
+  .option('-d, --directory <cmd>', 'Directory to save subtitle at')
+  .option('-p, --path <cmd>', 'Download subtitle for all movies in path')
+  .option('-c, --concurrency <i>',
+  'Used to assign number of concurrent download with -p')
+  .option('-v, --verbose <integer>', 'A value that can be increased')
   .parse(process.argv);
   let loader=new Loader();
   if (program.path) {
+    const verboseLevel=program.verbose || 1;
+    print(chalk.bold('Verbosity level = '+verboseLevel), 2, verboseLevel);
     const files = await fromDir(program.path, ['.mp4', '.avi']);
+    let subs=files.length;
     loader.stop('Detected:\n\t'+files.join('\n\t'));
-    const councurrency = parseInt(program.councurrency) || 1;
-    loader.start(chalk.bold('Downloading subtitles'));
+    print(chalk.bold('Detected:\n\t')+chalk.cyan(files.join('\n\t'))
+    , 2, verboseLevel);
+    const councurrency = parseInt(program.concurrency) || 2;
+    loader.start(chalk.bold('Downloading subtitles'
+    +chalk.blue(' ['+subs+']')));
     for (let i = 0; i < files.length; i += councurrency) {
       const pack = [];
       for (const file of files.slice(i, i + councurrency)) {
@@ -87,14 +104,19 @@ async function main() {
         const download = passiveDownloader(name, program.language, dir);
         pack.push(download);
       }
-      await Promise.all(pack);
+      const result=await Promise.all(pack);
+      if (verboseLevel >=2) {
+      const msg='\n\tDownloaded:\n\t\t'+makeArrayFlat(result).join('\n\t\t');
+      print(chalk.bold(msg), 2, verboseLevel);
+    }
     }
     loader.stop(successMessage(chalk.bold('Downloaded!')));
   }
-  if (program.movie) {
-    const movieName = program.movie;
+  if (program.search) {
+    const saveLocation=program.directory || './';
+    const movieName = program.search;
     const language = program.language || 'english';
-    const downloader=interactiveDownloader(movieName, language, '.');
+    const downloader=interactiveDownloader(movieName, language, saveLocation);
     loader.start(chalk.bold('Retreiving')+' ...');
     downloader.on('info', async (info, choose)=>{
       loader.stop();

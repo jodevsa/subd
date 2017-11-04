@@ -96,7 +96,7 @@ var main = function () {
   var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
     var _this2 = this;
 
-    var program, loader, files, councurrency, i, pack, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _iterator3, _step3, file, name, dir, download, movieName, language, downloader;
+    var program, loader, verboseLevel, files, subs, councurrency, i, pack, _iteratorNormalCompletion3, _didIteratorError3, _iteratorError3, _iterator3, _step3, file, name, dir, download, result, msg, saveLocation, movieName, language, downloader;
 
     return regeneratorRuntime.wrap(function _callee4$(_context4) {
       while (1) {
@@ -104,29 +104,34 @@ var main = function () {
           case 0:
             program = __webpack_require__(4);
 
-            program.version('0.1.0').option('-m, --movie <string>', 'search movie').option('-l, --language <cmd>', 'language').option('-d, --directory <cmd>', 'directory').option('-p, --path <cmd>', 'download subtitle for all movies in path').option('-c, --councurrency <i>', 'used with passive mode').parse(_process2.default.argv);
+            program.version('0.1.0').option('-s, --search <cmd>', 'Search movie').option('-l, --language <cmd>', 'Subtitle Language').option('-d, --directory <cmd>', 'Directory to save subtitle at').option('-p, --path <cmd>', 'Download subtitle for all movies in path').option('-c, --concurrency <i>', 'Used to assign number of concurrent download with -p').option('-v, --verbose <integer>', 'A value that can be increased').parse(_process2.default.argv);
             loader = new _loader2.default();
 
             if (!program.path) {
-              _context4.next = 38;
+              _context4.next = 44;
               break;
             }
 
-            _context4.next = 6;
+            verboseLevel = program.verbose || 1;
+
+            print(_chalk2.default.bold('Verbosity level = ' + verboseLevel), 2, verboseLevel);
+            _context4.next = 8;
             return (0, _search_dir2.default)(program.path, ['.mp4', '.avi']);
 
-          case 6:
+          case 8:
             files = _context4.sent;
+            subs = files.length;
 
             loader.stop('Detected:\n\t' + files.join('\n\t'));
-            councurrency = parseInt(program.councurrency) || 1;
+            print(_chalk2.default.bold('Detected:\n\t') + _chalk2.default.cyan(files.join('\n\t')), 2, verboseLevel);
+            councurrency = parseInt(program.concurrency) || 2;
 
-            loader.start(_chalk2.default.bold('Downloading subtitles'));
+            loader.start(_chalk2.default.bold('Downloading subtitles' + _chalk2.default.blue(' [' + subs + ']')));
             i = 0;
 
-          case 11:
+          case 15:
             if (!(i < files.length)) {
-              _context4.next = 37;
+              _context4.next = 43;
               break;
             }
 
@@ -134,7 +139,7 @@ var main = function () {
             _iteratorNormalCompletion3 = true;
             _didIteratorError3 = false;
             _iteratorError3 = undefined;
-            _context4.prev = 16;
+            _context4.prev = 20;
 
             for (_iterator3 = files.slice(i, i + councurrency)[Symbol.iterator](); !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
               file = _step3.value;
@@ -144,56 +149,66 @@ var main = function () {
 
               pack.push(download);
             }
-            _context4.next = 24;
+            _context4.next = 28;
             break;
-
-          case 20:
-            _context4.prev = 20;
-            _context4.t0 = _context4['catch'](16);
-            _didIteratorError3 = true;
-            _iteratorError3 = _context4.t0;
 
           case 24:
             _context4.prev = 24;
-            _context4.prev = 25;
+            _context4.t0 = _context4['catch'](20);
+            _didIteratorError3 = true;
+            _iteratorError3 = _context4.t0;
+
+          case 28:
+            _context4.prev = 28;
+            _context4.prev = 29;
 
             if (!_iteratorNormalCompletion3 && _iterator3.return) {
               _iterator3.return();
             }
 
-          case 27:
-            _context4.prev = 27;
+          case 31:
+            _context4.prev = 31;
 
             if (!_didIteratorError3) {
-              _context4.next = 30;
+              _context4.next = 34;
               break;
             }
 
             throw _iteratorError3;
 
-          case 30:
-            return _context4.finish(27);
+          case 34:
+            return _context4.finish(31);
 
-          case 31:
-            return _context4.finish(24);
+          case 35:
+            return _context4.finish(28);
 
-          case 32:
-            _context4.next = 34;
+          case 36:
+            _context4.next = 38;
             return Promise.all(pack);
 
-          case 34:
+          case 38:
+            result = _context4.sent;
+
+            if (verboseLevel >= 2) {
+              msg = '\n\tDownloaded:\n\t\t' + makeArrayFlat(result).join('\n\t\t');
+
+              print(_chalk2.default.bold(msg), 2, verboseLevel);
+            }
+
+          case 40:
             i += councurrency;
-            _context4.next = 11;
+            _context4.next = 15;
             break;
 
-          case 37:
+          case 43:
             loader.stop(successMessage(_chalk2.default.bold('Downloaded!')));
 
-          case 38:
-            if (program.movie) {
-              movieName = program.movie;
+          case 44:
+            if (program.search) {
+              saveLocation = program.directory || './';
+              movieName = program.search;
               language = program.language || 'english';
-              downloader = (0, _subscene_scraper.interactiveDownloader)(movieName, language, '.');
+              downloader = (0, _subscene_scraper.interactiveDownloader)(movieName, language, saveLocation);
 
               loader.start(_chalk2.default.bold('Retreiving') + ' ...');
               downloader.on('info', function () {
@@ -283,12 +298,12 @@ var main = function () {
               });
             }
 
-          case 39:
+          case 45:
           case 'end':
             return _context4.stop();
         }
       }
-    }, _callee4, this, [[16, 20, 24, 32], [25,, 27, 31]]);
+    }, _callee4, this, [[20, 24, 28, 36], [29,, 31, 35]]);
   }));
 
   return function main() {
@@ -332,6 +347,8 @@ var _subscene_scraper = __webpack_require__(16);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 _inquirer2.default.registerPrompt('autocomplete', _inquirerAutocompletePrompt2.default);
@@ -339,7 +356,11 @@ _inquirer2.default.registerPrompt('autocomplete', _inquirerAutocompletePrompt2.d
 function successMessage(str) {
   return _chalk2.default.green('*') + ' ' + str;
 }
-
+function print(str, showVer, ver) {
+  if (ver >= parseInt(showVer)) {
+    console.log(_chalk2.default.blue('*') + '\t' + str);
+  }
+}
 function sleep(seconds) {
   return new Promise(function (resolve, reject) {
     setTimeout(function () {
@@ -451,6 +472,13 @@ function getURL(name, result) {
     }
   }
 }
+
+function makeArrayFlat(array) {
+  return array.reduce(function (total, arr) {
+    return [].concat(_toConsumableArray(total), _toConsumableArray(arr));
+  }, []);
+}
+
 
 main();
 
@@ -711,7 +739,7 @@ var Loader = function () {
       this.ui = new _bottomBar2.default({ bottomBar: this.loader[this.i % 4] + this.word });
       this.timer = setInterval(function () {
         _this.ui.updateBottomBar(_this.loader[_this.i++ % 4] + _this.word);
-      }, 200);
+      }, 100);
     }
   }, {
     key: 'stop',
@@ -720,6 +748,7 @@ var Loader = function () {
       if (this.running) {
         this.running = false;
         clearInterval(this.timer);
+        this.ui.updateBottomBar(this.loader[3] + this.word);
         this.ui.updateBottomBar(output);
         this.ui.close();
       }
